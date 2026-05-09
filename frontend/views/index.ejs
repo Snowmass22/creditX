@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Loan Predictor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    label { font-size: 14px; color: #555; }
+    input, select { width: 100%; padding: 8px; margin: 6px 0 14px;
+                    box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; }
+    button { padding: 12px 32px; background: #4f46e5; color: white;
+             border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Loan Application</h1>
+  <form action="/predict" method="POST">
+
+    <label>Applicant Income</label>
+    <input type="number" name="Applicant_Income" required>
+
+    <label>Co-applicant Income</label>
+    <input type="number" name="Coapplicant_Income" value="0">
+
+    <label>Age</label>
+    <input type="number" name="Age" required>
+
+    <label>Dependents</label>
+    <input type="number" name="Dependents" value="0">
+
+    <label>Existing Loans</label>
+    <input type="number" name="Existing_Loans" value="0">
+
+    <label>Savings</label>
+    <input type="number" name="Savings" required>
+
+    <label>Collateral Value</label>
+    <input type="number" name="Collateral_Value" value="0">
+
+    <label>Loan Amount</label>
+    <input type="number" name="Loan_Amount" required>
+
+    <label>Loan Term (months)</label>
+    <input type="number" name="Loan_Term" required>
+
+    <label>Credit Score</label>
+    <input type="number" name="Credit_Score" required>
+
+    <label>DTI Ratio</label>
+    <input type="number" step="0.01" name="DTI_Ratio" required>
+
+    <label>Education Level</label>
+    <select name="Education_Level">
+      <option>Bachelor</option>
+      <option>Master</option>
+      <option>PhD</option>
+    </select>
+
+    <label>Employment Status</label>
+    <select name="Employment_Status">
+      <option>Salaried</option>
+      <option>Self-employed</option>
+      <option>Contract</option>
+      <option>Unemployed</option>
+    </select>
+
+    <label>Marital Status</label>
+    <select name="Marital_Status">
+      <option>Married</option>
+      <option>Single</option>
+    </select>
+
+    <label>Loan Purpose</label>
+    <select name="Loan_Purpose">
+      <option>Home</option>
+      <option>Car</option>
+      <option>Education</option>
+      <option>Business</option>
+      <option>Personal</option>
+    </select>
+
+    <label>Property Area</label>
+    <select name="Property_Area">
+      <option>Urban</option>
+      <option>Semiurban</option>
+      <option>Rural</option>
+    </select>
+
+    <label>Gender</label>
+    <select name="Gender">
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+
+    <label>Employer Category</label>
+    <select name="Employer_Category">
+      <option>Government</option>
+      <option>MNC</option>
+      <option>Private</option>
+      <option>Business</option>
+      <option>Unemployed</option>
+    </select>
+
+    <button type="submit" id="btn">Check Eligibility</button>
+  </form>
+
+  <script>
+    gsap.from("#title", { y: -30, opacity: 0, duration: 0.6 });
+    gsap.from("form",   { y: 20,  opacity: 0, duration: 0.7, delay: 0.2 });
+    document.querySelector("form").addEventListener("submit", () => {
+      gsap.to("#btn", { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+    });
+  </script>
+</body>
+</html>
