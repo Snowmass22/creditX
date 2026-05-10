@@ -18,7 +18,7 @@ const FLASK_URL = process.env.FLASK_URL || "http://localhost:5000";
   }
 })();
 
-app.get("/", (req, res) => res.render("index"));
+app.get("/", (req, res) => res.render("index-updated"));
 
 app.post("/predict", async (req, res) => {
   try {
@@ -58,7 +58,7 @@ app.post("/predict", async (req, res) => {
     clearTimeout(timeout);
 
     const result = await response.json();
-    res.render("result", {
+    res.render("result-updated", {
       approved:   result.approved,
       confidence: result.confidence ?? "N/A"
     });
