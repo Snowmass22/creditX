@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CreditX — Loan Eligibility</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --bg: #05070f;
+      --surface: #0d1120;
+      --surface2: #131929;
+      --border: rgba(99, 130, 255, 0.15);
+      --accent: #6382ff;
+      --accent2: #a78bfa;
+      --gold: #f0c040;
+      --text: #e8ecff;
+      --muted: #7a84a8;
+      --success: #34d399;
+      --danger: #f87171;
+      --radius: 16px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* THREE.JS CANVAS */
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* LAYOUT */
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 80px;
+    }
+
+    /* HEADER */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 50px;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .logo-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 10px var(--gold);
+    }
+
+    .header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+      font-weight: 500;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 30%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header p {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    /* PROGRESS BAR */
+    .progress-track {
+      width: 100%;
+      max-width: 620px;
+      margin-bottom: 32px;
+    }
+
+    .step-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .step-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: color 0.3s;
+    }
+
+    .step-label.active { color: var(--accent); }
+    .step-label.done { color: var(--success); }
+
+    .progress-bar-bg {
+      height: 3px;
+      background: var(--surface2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 12px var(--accent);
+    }
+
+    /* FORM CARD */
+    .form-card {
+      width: 100%;
+      max-width: 620px;
+      background: rgba(13, 17, 32, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      backdrop-filter: blur(20px);
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,130,255,0.05);
+    }
+
+    .form-card-inner {
+      padding: 40px 40px 32px;
+    }
+
+    /* STEP */
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: block;
+    }
+
+    .step-heading {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .step-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    /* FIELD GRID */
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .field-grid.single { grid-template-columns: 1fr; }
+    .field-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+    .field-full { grid-column: 1 / -1; }
+
+    /* FIELD */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .field input,
+    .field select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+    }
+
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a84a8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99, 130, 255, 0.15);
+      background: rgba(99, 130, 255, 0.05);
+    }
+
+    .field input::placeholder { color: rgba(122, 132, 168, 0.5); }
+
+    .field select option {
+      background: #1a2035;
+      color: var(--text);
+    }
+
+    /* AMOUNT HELPER */
+    .amount-hint {
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    /* CHOICE PILLS (for select-like fields) */
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      padding: 8px 16px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .pill.selected {
+      background: rgba(99, 130, 255, 0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 12px rgba(99, 130, 255, 0.2);
+    }
+
+    /* Hidden inputs for pill selections */
+    .pill-hidden { display: none; }
+
+    /* SCORE SLIDER */
+    .slider-wrap {
+      position: relative;
+    }
+
+    .slider-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent) var(--pct, 50%), var(--surface2) var(--pct, 50%));
+      outline: none;
+      cursor: pointer;
+      border: none !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px rgba(99, 130, 255, 0.6);
+      cursor: pointer;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* CARD FOOTER */
+    .form-footer {
+      padding: 20px 40px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      gap: 12px;
+    }
+
+    .btn {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      padding: 14px 28px;
+      transition: all 0.2s;
+    }
+
+    .btn-back {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-back:hover {
+      color: var(--text);
+      border-color: var(--muted);
+    }
+
+    .btn-next {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(99, 130, 255, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-next:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(99, 130, 255, 0.5);
+    }
+
+    .btn-next:active { transform: translateY(0); }
+
+    .btn-submit {
+      background: linear-gradient(135deg, var(--gold), #f97316);
+      color: #0a0800;
+      box-shadow: 0 8px 24px rgba(240, 192, 64, 0.35);
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(240, 192, 64, 0.5);
+    }
+
+    .step-counter {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* STEP ICON */
+    .step-icon {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: rgba(99, 130, 255, 0.1);
+      border: 1px solid rgba(99, 130, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    /* DIVIDER */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 24px 0;
+    }
+
+    /* REVIEW SECTION */
+    .review-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .review-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .review-item .r-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .review-item .r-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* FLOATING PARTICLES (CSS only) */
+    .particle {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      animation: float linear infinite;
+      opacity: 0.25;
+    }
+
+    @keyframes float {
+      0%   { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10%  { opacity: 0.25; }
+      90%  { opacity: 0.1; }
+      100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* TOOLTIP */
+    .field-tip {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* CREDIT SCORE COLOR */
+    .score-poor   { color: var(--danger) !important; }
+    .score-fair   { color: #fb923c !important; }
+    .score-good   { color: var(--gold) !important; }
+    .score-great  { color: var(--success) !important; }
+
+    @media (max-width: 600px) {
+      .form-card-inner { padding: 28px 20px 20px; }
+      .form-footer { padding: 16px 20px 24px; }
+      .field-grid { grid-template-columns: 1fr; }
+      .field-grid.triple { grid-template-columns: 1fr 1fr; }
+      .header h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Three.js Canvas -->
+<canvas id="bg-canvas"></canvas>
+
+<div class="app-wrapper">
+
+  <!-- Header -->
+  <div class="header" id="header">
+    <div class="logo"><span class="logo-dot"></span>CreditX<span class="logo-dot"></span></div>
+    <h1>Loan Eligibility<br>Predictor</h1>
+    <p>AI-powered credit assessment in seconds</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-track" id="progress-track">
+    <div class="step-labels">
+      <span class="step-label active" data-step="0">Personal</span>
+      <span class="step-label" data-step="1">Financial</span>
+      <span class="step-label" data-step="2">Loan</span>
+      <span class="step-label" data-step="3">Profile</span>
+      <span class="step-label" data-step="4">Review</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill" style="width: 10%"></div>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="form-card" id="form-card">
+    <form action="/predict" method="POST" id="main-form">
+
+      <div class="form-card-inner">
+
+        <!-- ── STEP 0: PERSONAL ── -->
+        <div class="step active" id="step-0">
+          <div class="step-icon">👤</div>
+          <div class="step-heading">Personal Details</div>
+          <div class="step-sub">Tell us a bit about yourself</div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label>Age</label>
+              <input type="number" name="Age" id="Age" min="18" max="80" placeholder="e.g. 28" required>
+            </div>
+            <div class="field">
+              <label>Dependents</label>
+              <input type="number" name="Dependents" id="Dependents" min="0" value="0" placeholder="0">
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field">
+            <label>Gender</label>
+            <div class="pill-group" id="gender-pills">
+              <div class="pill selected" data-val="Male">Male</div>
+              <div class="pill" data-val="Female">Female</div>
+            </div>
+            <input type="hidden" name="Gender" id="Gender" value="Male">
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field">
+            <label>Marital Status</label>
+            <div class="pill-group" id="marital-pills">
+              <div class="pill selected" data-val="Married">Married</div>
+              <div class="pill" data-val="Single">Single</div>
+            </div>
+            <input type="hidden" name="Marital_Status" id="Marital_Status" value="Married">
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field">
+            <label>Education Level</label>
+            <div class="pill-group" id="edu-pills">
+              <div class="pill selected" data-val="Bachelor">Bachelor</div>
+              <div class="pill" data-val="Master">Master</div>
+              <div class="pill" data-val="PhD">PhD</div>
+            </div>
+            <input type="hidden" name="Education_Level" id="Education_Level" value="Bachelor">
+          </div>
+        </div>
+
+        <!-- ── STEP 1: FINANCIAL ── -->
+        <div class="step" id="step-1">
+          <div class="step-icon">💰</div>
+          <div class="step-heading">Financial Overview</div>
+          <div class="step-sub">Income, savings & existing obligations</div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label>Applicant Income (₹)</label>
+              <input type="number" name="Applicant_Income" id="Applicant_Income" placeholder="e.g. 60000" required>
+              <div class="field-tip">Monthly income in INR</div>
+            </div>
+            <div class="field">
+              <label>Co-applicant Income (₹)</label>
+              <input type="number" name="Coapplicant_Income" id="Coapplicant_Income" placeholder="0" value="0">
+              <div class="field-tip">Leave 0 if none</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label>Total Savings (₹)</label>
+              <input type="number" name="Savings" id="Savings" placeholder="e.g. 200000" required>
+            </div>
+            <div class="field">
+              <label>Collateral Value (₹)</label>
+              <input type="number" name="Collateral_Value" id="Collateral_Value" placeholder="0" value="0">
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label>Existing Loans</label>
+              <input type="number" name="Existing_Loans" id="Existing_Loans" min="0" value="0" placeholder="0">
+              <div class="field-tip">Number of active loans</div>
+            </div>
+            <div class="field">
+              <label>DTI Ratio</label>
+              <input type="number" step="0.01" name="DTI_Ratio" id="DTI_Ratio" placeholder="e.g. 0.35" required>
+              <div class="field-tip">Debt-to-income ratio (0–1)</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Credit Score Slider -->
+          <div class="field">
+            <label>Credit Score</label>
+            <span class="slider-value" id="score-display">650</span>
+            <div class="slider-wrap">
+              <input type="range" name="Credit_Score" id="Credit_Score"
+                     min="300" max="900" value="650" step="1"
+                     oninput="updateScore(this.value)">
+            </div>
+            <div class="slider-labels"><span>300 — Poor</span><span>900 — Excellent</span></div>
+          </div>
+        </div>
+
+        <!-- ── STEP 2: LOAN DETAILS ── -->
+        <div class="step" id="step-2">
+          <div class="step-icon">🏦</div>
+          <div class="step-heading">Loan Details</div>
+          <div class="step-sub">What are you applying for?</div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label>Loan Amount (₹)</label>
+              <input type="number" name="Loan_Amount" id="Loan_Amount" placeholder="e.g. 500000" required>
+            </div>
+            <div class="field">
+              <label>Loan Term (months)</label>
+              <input type="number" name="Loan_Term" id="Loan_Term" placeholder="e.g. 60" required>
+              <div class="field-tip">e.g. 12, 24, 60, 120, 360</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field">
+            <label>Loan Purpose</label>
+            <div class="pill-group" id="purpose-pills">
+              <div class="pill selected" data-val="Home">🏠 Home</div>
+              <div class="pill" data-val="Car">🚗 Car</div>
+              <div class="pill" data-val="Education">🎓 Education</div>
+              <div class="pill" data-val="Business">💼 Business</div>
+              <div class="pill" data-val="Personal">✨ Personal</div>
+            </div>
+            <input type="hidden" name="Loan_Purpose" id="Loan_Purpose" value="Home">
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field">
+            <label>Property Area</label>
+            <div class="pill-group" id="area-pills">
+              <div class="pill selected" data-val="Urban">🌆 Urban</div>
+              <div class="pill" data-val="Semiurban">🏘️ Semiurban</div>
+              <div class="pill" data-val="Rural">🌾 Rural</div>
+            </div>
+            <input type="hidden" name="Property_Area" id="Property_Area" value="Urban">
+          </div>
+        </div>
+
+        <!-- ── STEP 3: EMPLOYMENT ── -->
+        <div class="step" id="step-3">
+          <div class="step-icon">💼</div>
+          <div class="step-heading">Employment Profile</div>
+          <div class="step-sub">Your work & employer details</div>
+
+          <div class="field">
+            <label>Employment Status</label>
+            <div class="pill-group" id="emp-pills">
+              <div class="pill selected" data-val="Salaried">Salaried</div>
+              <div class="pill" data-val="Self-employed">Self-employed</div>
+              <div class="pill" data-val="Contract">Contract</div>
+              <div class="pill" data-val="Unemployed">Unemployed</div>
+            </div>
+            <input type="hidden" name="Employment_Status" id="Employment_Status" value="Salaried">
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field">
+            <label>Employer Category</label>
+            <div class="pill-group" id="employer-pills">
+              <div class="pill selected" data-val="Government">🏛️ Government</div>
+              <div class="pill" data-val="MNC">🌐 MNC</div>
+              <div class="pill" data-val="Private">🏢 Private</div>
+              <div class="pill" data-val="Business">📊 Business</div>
+              <div class="pill" data-val="Unemployed">—</div>
+            </div>
+            <input type="hidden" name="Employer_Category" id="Employer_Category" value="Government">
+          </div>
+        </div>
+
+        <!-- ── STEP 4: REVIEW ── -->
+        <div class="step" id="step-4">
+          <div class="step-icon">🔍</div>
+          <div class="step-heading">Review & Submit</div>
+          <div class="step-sub">Double-check before we analyze</div>
+          <div class="review-grid" id="review-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+      </div><!-- /form-card-inner -->
+
+      <!-- Footer -->
+      <div class="form-footer">
+        <button type="button" class="btn btn-back" id="btn-back" onclick="prevStep()" style="display:none">← Back</button>
+        <span class="step-counter" id="step-counter">Step 1 of 5</span>
+        <button type="button" class="btn btn-next" id="btn-next" onclick="nextStep()">
+          Continue <span>→</span>
+        </button>
+        <button type="submit" class="btn btn-submit" id="btn-submit" style="display:none">
+          ⚡ Analyze Eligibility
+        </button>
+      </div>
+
+    </form>
+  </div><!-- /form-card -->
+
+</div><!-- /app-wrapper -->
+
+<!-- ─────────────────────── SCRIPTS ─────────────────────── -->
+<script>
+  /* ── THREE.JS BACKGROUND ── */
+  (function() {
+    const canvas = document.getElementById('bg-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.z = 60;
+
+    // Particles
+    const count = 1200;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 160;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const mat = new THREE.PointsMaterial({
+      color: 0x6382ff,
+      size: 0.35,
+      transparent: true,
+      opacity: 0.55,
+      sizeAttenuation: true
+    });
+    const points = new THREE.Points(geo, mat);
+    scene.add(points);
+
+    // Wireframe torus
+    const torusGeo = new THREE.TorusGeometry(22, 6, 12, 60);
+    const torusMat = new THREE.MeshBasicMaterial({
+      color: 0x6382ff,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.06
+    });
+    const torus = new THREE.Mesh(torusGeo, torusMat);
+    torus.rotation.x = Math.PI / 4;
+    scene.add(torus);
+
+    // Icosahedron
+    const icoGeo = new THREE.IcosahedronGeometry(10, 1);
+    const icoMat = new THREE.MeshBasicMaterial({
+      color: 0xa78bfa,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.07
+    });
+    const ico = new THREE.Mesh(icoGeo, icoMat);
+    ico.position.set(35, -20, -20);
+    scene.add(ico);
+
+    let mouse = { x: 0, y: 0 };
+    document.addEventListener('mousemove', e => {
+      mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
+      mouse.y = -(e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = Date.now() * 0.0003;
+      points.rotation.y = t * 0.15;
+      points.rotation.x = t * 0.07;
+      torus.rotation.y = t * 0.3;
+      torus.rotation.z = t * 0.1;
+      ico.rotation.x = t * 0.4;
+      ico.rotation.y = t * 0.25;
+      camera.position.x += (mouse.x * 4 - camera.position.x) * 0.04;
+      camera.position.y += (mouse.y * 4 - camera.position.y) * 0.04;
+      camera.lookAt(scene.position);
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  })();
+
+  /* ── STEP LOGIC ── */
+  const TOTAL_STEPS = 5;
+  let currentStep = 0;
+
+  const progressFill = document.getElementById('progress-fill');
+  const stepCounter  = document.getElementById('step-counter');
+  const btnBack      = document.getElementById('btn-back');
+  const btnNext      = document.getElementById('btn-next');
+  const btnSubmit    = document.getElementById('btn-submit');
+
+  function updateProgress() {
+    const pct = ((currentStep + 1) / TOTAL_STEPS) * 100;
+    progressFill.style.width = pct + '%';
+    stepCounter.textContent = `Step ${currentStep + 1} of ${TOTAL_STEPS}`;
+
+    document.querySelectorAll('.step-label').forEach((el, i) => {
+      el.classList.remove('active', 'done');
+      if (i === currentStep) el.classList.add('active');
+      if (i < currentStep) el.classList.add('done');
+    });
+
+    btnBack.style.display   = currentStep === 0 ? 'none' : '';
+    btnNext.style.display   = currentStep === TOTAL_STEPS - 1 ? 'none' : '';
+    btnSubmit.style.display = currentStep === TOTAL_STEPS - 1 ? '' : 'none';
+  }
+
+  function showStep(index, dir) {
+    const steps = document.querySelectorAll('.step');
+    const current = steps[currentStep];
+    const next = steps[index];
+
+    gsap.to(current, {
+      x: dir > 0 ? -40 : 40, opacity: 0, duration: 0.25,
+      onComplete: () => {
+        current.classList.remove('active');
+        current.style.cssText = '';
+        next.classList.add('active');
+        gsap.fromTo(next,
+          { x: dir > 0 ? 40 : -40, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.3, ease: 'power2.out' }
+        );
+      }
+    });
+
+    currentStep = index;
+    updateProgress();
+
+    if (currentStep === TOTAL_STEPS - 1) buildReview();
+  }
+
+  function nextStep() {
+    if (!validateStep()) return;
+    if (currentStep < TOTAL_STEPS - 1) showStep(currentStep + 1, 1);
+  }
+
+  function prevStep() {
+    if (currentStep > 0) showStep(currentStep - 1, -1);
+  }
+
+  function validateStep() {
+    const step = document.getElementById('step-' + currentStep);
+    const inputs = step.querySelectorAll('input[required], select[required]');
+    let valid = true;
+    inputs.forEach(inp => {
+      if (!inp.value.trim()) {
+        valid = false;
+        gsap.fromTo(inp,
+          { x: -6 }, { x: 6, duration: 0.05, repeat: 5, yoyo: true,
+          onComplete: () => gsap.set(inp, { x: 0 }) }
+        );
+        inp.style.borderColor = 'var(--danger)';
+        inp.addEventListener('input', () => inp.style.borderColor = '', { once: true });
+      }
+    });
+    return valid;
+  }
+
+  /* ── REVIEW BUILDER ── */
+  function buildReview() {
+    const fields = [
+      { label: 'Age',              id: 'Age' },
+      { label: 'Dependents',       id: 'Dependents' },
+      { label: 'Gender',           id: 'Gender' },
+      { label: 'Marital Status',   id: 'Marital_Status' },
+      { label: 'Education',        id: 'Education_Level' },
+      { label: 'App. Income',      id: 'Applicant_Income' },
+      { label: 'Co-app. Income',   id: 'Coapplicant_Income' },
+      { label: 'Savings',          id: 'Savings' },
+      { label: 'Collateral',       id: 'Collateral_Value' },
+      { label: 'Existing Loans',   id: 'Existing_Loans' },
+      { label: 'DTI Ratio',        id: 'DTI_Ratio' },
+      { label: 'Credit Score',     id: 'Credit_Score' },
+      { label: 'Loan Amount',      id: 'Loan_Amount' },
+      { label: 'Loan Term',        id: 'Loan_Term' },
+      { label: 'Loan Purpose',     id: 'Loan_Purpose' },
+      { label: 'Property Area',    id: 'Property_Area' },
+      { label: 'Employment',       id: 'Employment_Status' },
+      { label: 'Employer',         id: 'Employer_Category' },
+    ];
+
+    const grid = document.getElementById('review-grid');
+    grid.innerHTML = fields.map(f => {
+      const el = document.getElementById(f.id);
+      const val = el ? (el.value || '—') : '—';
+      return `<div class="review-item">
+        <div class="r-label">${f.label}</div>
+        <div class="r-val">${val}</div>
+      </div>`;
+    }).join('');
+
+    gsap.from('.review-item', {
+      opacity: 0, y: 10, stagger: 0.04, duration: 0.3, ease: 'power2.out'
+    });
+  }
+
+  /* ── PILL SELECTOR ── */
+  function makePills(groupId, hiddenId) {
+    const group = document.getElementById(groupId);
+    if (!group) return;
+    group.querySelectorAll('.pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        group.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+        pill.classList.add('selected');
+        document.getElementById(hiddenId).value = pill.dataset.val;
+        gsap.fromTo(pill, { scale: 0.92 }, { scale: 1, duration: 0.2, ease: 'back.out(2)' });
+      });
+    });
+  }
+
+  makePills('gender-pills',   'Gender');
+  makePills('marital-pills',  'Marital_Status');
+  makePills('edu-pills',      'Education_Level');
+  makePills('purpose-pills',  'Loan_Purpose');
+  makePills('area-pills',     'Property_Area');
+  makePills('emp-pills',      'Employment_Status');
+  makePills('employer-pills', 'Employer_Category');
+
+  /* ── CREDIT SCORE SLIDER ── */
+  function updateScore(val) {
+    const display = document.getElementById('score-display');
+    const slider  = document.getElementById('Credit_Score');
+    const pct = ((val - 300) / 600) * 100;
+    slider.style.setProperty('--pct', pct + '%');
+    display.textContent = val;
+    display.className = 'slider-value';
+    if (val < 500)      display.classList.add('score-poor');
+    else if (val < 600) display.classList.add('score-fair');
+    else if (val < 750) display.classList.add('score-good');
+    else                display.classList.add('score-great');
+  }
+  updateScore(650);
+
+  /* ── ENTRANCE ANIMATIONS ── */
+  gsap.fromTo('#header',
+    { y: -30, opacity: 0 },
+    { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out' }
+  );
+  gsap.fromTo('#progress-track',
+    { y: 20, opacity: 0 },
+    { y: 0, opacity: 1, duration: 0.7, delay: 0.2, ease: 'power2.out' }
+  );
+  gsap.fromTo('#form-card',
+    { y: 40, opacity: 0, scale: 0.97 },
+    { y: 0, opacity: 1, scale: 1, duration: 0.8, delay: 0.35, ease: 'power3.out' }
+  );
+
+  /* ── SUBMIT ANIMATION ── */
+  document.getElementById('btn-submit').addEventListener('click', function() {
+    gsap.to(this, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+  });
+
+  updateProgress();
+</script>
+</body>
+</html>

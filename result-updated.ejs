@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CreditX — Result</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --bg: #05070f;
+      --surface: #0d1120;
+      --surface2: #131929;
+      --border: rgba(99, 130, 255, 0.15);
+      --accent: #6382ff;
+      --accent2: #a78bfa;
+      --gold: #f0c040;
+      --text: #e8ecff;
+      --muted: #7a84a8;
+      --success: #34d399;
+      --danger: #f87171;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .scene {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      width: 100%;
+    }
+
+    /* LOGO */
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 35px;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 48px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+    }
+
+    .logo-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 8px var(--gold);
+    }
+
+    /* RESULT CARD */
+    .result-card {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(13, 17, 32, 0.9);
+      border-radius: 28px;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(24px);
+      overflow: hidden;
+      box-shadow: 0 60px 100px rgba(0,0,0,0.6);
+      opacity: 0;
+      transform: scale(0.85) translateY(30px);
+    }
+
+    /* TOP BAND */
+    .card-band {
+      height: 6px;
+      width: 100%;
+    }
+
+    .card-band.approved {
+      background: linear-gradient(90deg, #059669, #34d399, #6ee7b7);
+    }
+
+    .card-band.rejected {
+      background: linear-gradient(90deg, #dc2626, #f87171, #fca5a5);
+    }
+
+    /* CARD BODY */
+    .card-body {
+      padding: 40px 44px;
+      text-align: center;
+    }
+
+    /* ICON RING */
+    .icon-wrap {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 36px;
+      position: relative;
+    }
+
+    .icon-wrap.approved {
+      background: rgba(52, 211, 153, 0.1);
+      border: 2px solid rgba(52, 211, 153, 0.3);
+      box-shadow: 0 0 40px rgba(52, 211, 153, 0.2);
+    }
+
+    .icon-wrap.rejected {
+      background: rgba(248, 113, 113, 0.1);
+      border: 2px solid rgba(248, 113, 113, 0.3);
+      box-shadow: 0 0 40px rgba(248, 113, 113, 0.2);
+    }
+
+    .icon-ring {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      animation: spin 6s linear infinite;
+    }
+
+    .icon-ring.approved {
+      border-top-color: rgba(52, 211, 153, 0.5);
+      border-right-color: rgba(52, 211, 153, 0.2);
+    }
+
+    .icon-ring.rejected {
+      border-top-color: rgba(248, 113, 113, 0.5);
+      border-right-color: rgba(248, 113, 113, 0.2);
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* VERDICT */
+    .verdict {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+
+    .verdict.approved { color: var(--success); }
+    .verdict.rejected { color: var(--danger); }
+
+    .verdict-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    /* CONFIDENCE METER */
+    .meter-wrap {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .meter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+
+    .meter-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .meter-pct {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .meter-pct.approved { color: var(--success); }
+    .meter-pct.rejected { color: var(--danger); }
+
+    .meter-bar-bg {
+      height: 8px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .meter-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      width: 0%;
+      transition: width 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .meter-bar-fill.approved {
+      background: linear-gradient(90deg, #059669, #34d399);
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+    }
+
+    .meter-bar-fill.rejected {
+      background: linear-gradient(90deg, #dc2626, #f87171);
+      box-shadow: 0 0 10px rgba(248, 113, 113, 0.4);
+    }
+
+    .meter-desc {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* INFO ROW */
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .info-chip {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .info-chip .ic-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .info-chip .ic-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* CTA */
+    .cta-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 13px 20px;
+      border-radius: 12px;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(99, 130, 255, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(99, 130, 255, 0.45);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+    /* PARTICLES RING (CSS) */
+    .particles-ring {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: 50%;
+    }
+
+    @media (max-width: 520px) {
+      .card-body { padding: 28px 24px; }
+      .verdict { font-size: 2rem; }
+      .cta-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="scene">
+  <div class="logo" id="logo">
+    <span class="logo-dot"></span>CreditX<span class="logo-dot"></span>
+  </div>
+
+  <div class="result-card" id="result-card">
+    <div class="card-band <%= approved ? 'approved' : 'rejected' %>"></div>
+
+    <div class="card-body">
+      <!-- Icon -->
+      <div class="icon-wrap <%= approved ? 'approved' : 'rejected' %>">
+        <div class="icon-ring <%= approved ? 'approved' : 'rejected' %>"></div>
+        <%= approved ? '✅' : '❌' %>
+      </div>
+
+      <!-- Verdict -->
+      <div class="verdict <%= approved ? 'approved' : 'rejected' %>" id="verdict-text">
+        <%= approved ? 'Approved!' : 'Rejected' %>
+      </div>
+      <div class="verdict-sub">
+        <%= approved
+          ? 'Congratulations — your loan application qualifies.'
+          : 'Unfortunately, your application does not meet the criteria.' %>
+      </div>
+
+      <!-- Confidence Meter -->
+      <div class="meter-wrap">
+        <div class="meter-header">
+          <span class="meter-label">Model Confidence</span>
+          <span class="meter-pct <%= approved ? 'approved' : 'rejected' %>" id="conf-number">0%</span>
+        </div>
+        <div class="meter-bar-bg">
+          <div class="meter-bar-fill <%= approved ? 'approved' : 'rejected' %>"
+               id="meter-fill"></div>
+        </div>
+        <div class="meter-desc">
+          Based on your financial profile & credit history
+        </div>
+      </div>
+
+      <!-- Info chips -->
+      <div class="info-row">
+        <div class="info-chip">
+          <div class="ic-label">Decision</div>
+          <div class="ic-val"><%= approved ? '✅ Approve' : '❌ Decline' %></div>
+        </div>
+        <div class="info-chip">
+          <div class="ic-label">AI Score</div>
+          <div class="ic-val ic-conf"><%= confidence %>%</div>
+        </div>
+        <div class="info-chip">
+          <div class="ic-label">Status</div>
+          <div class="ic-val"><%= approved ? 'Eligible' : 'Ineligible' %></div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-row">
+        <a href="/" class="btn btn-primary">← New Application</a>
+        <button class="btn btn-ghost" onclick="window.print()">🖨 Print</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── THREE.JS BACKGROUND ── */
+  (function() {
+    const canvas = document.getElementById('bg-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.z = 60;
+
+    const approved = <%- approved ? 'true' : 'false' %>;
+    const mainColor = approved ? 0x34d399 : 0xf87171;
+    const secColor  = approved ? 0x059669 : 0xdc2626;
+
+    // Stars
+    const count = 900;
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count * 3; i++) pos[i] = (Math.random() - 0.5) * 180;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({ color: mainColor, size: 0.3, transparent: true, opacity: 0.4 });
+    scene.add(new THREE.Points(geo, mat));
+
+    // Orbiting ring
+    const ringGeo = new THREE.TorusGeometry(28, 0.4, 6, 80);
+    const ringMat = new THREE.MeshBasicMaterial({ color: mainColor, transparent: true, opacity: 0.12 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 3;
+    scene.add(ring);
+
+    // Second ring
+    const ring2Geo = new THREE.TorusGeometry(18, 0.25, 6, 60);
+    const ring2Mat = new THREE.MeshBasicMaterial({ color: secColor, transparent: true, opacity: 0.08 });
+    const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+    ring2.rotation.x = -Math.PI / 5;
+    ring2.rotation.z = Math.PI / 4;
+    scene.add(ring2);
+
+    let mx = 0, my = 0;
+    document.addEventListener('mousemove', e => {
+      mx = (e.clientX / window.innerWidth - 0.5) * 2;
+      my = -(e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = Date.now() * 0.0003;
+      ring.rotation.y  = t * 0.2;
+      ring2.rotation.y = -t * 0.15;
+      camera.position.x += (mx * 3 - camera.position.x) * 0.04;
+      camera.position.y += (my * 3 - camera.position.y) * 0.04;
+      camera.lookAt(scene.position);
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  })();
+
+  /* ── ENTRANCE ANIMATIONS ── */
+  const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+  tl.to('#logo', { opacity: 1, y: 0, duration: 0.6 })
+    .to('#result-card', {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      duration: 0.8,
+      ease: 'back.out(1.4)'
+    }, '-=0.2')
+    .from('.icon-wrap', { scale: 0, rotate: -180, duration: 0.6, ease: 'back.out(2)' }, '-=0.4')
+    .from('.verdict',    { y: 20, opacity: 0, duration: 0.4 }, '-=0.2')
+    .from('.verdict-sub',{ y: 10, opacity: 0, duration: 0.3 }, '-=0.2')
+    .from('.meter-wrap', { y: 16, opacity: 0, duration: 0.35 }, '-=0.1')
+    .from('.info-row',   { y: 12, opacity: 0, duration: 0.3 }, '-=0.1')
+    .from('.cta-row',    { y: 10, opacity: 0, duration: 0.3 }, '-=0.1')
+    .add(() => animateMeter(), '-=0.2');
+
+  /* ── CONFIDENCE METER ── */
+  function animateMeter() {
+    const raw = parseFloat('<%= confidence %>') || 0;
+    const fill = document.getElementById('meter-fill');
+    const num  = document.getElementById('conf-number');
+
+    gsap.to({ val: 0 }, {
+      val: raw,
+      duration: 1.4,
+      ease: 'power2.out',
+      onUpdate: function() {
+        const v = Math.round(this.targets()[0].val);
+        num.textContent = v + '%';
+        fill.style.width = v + '%';
+      }
+    });
+  }
+</script>
+</body>
+</html>
