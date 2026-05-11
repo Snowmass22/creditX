@@ -83,23 +83,9 @@ The application will typically be accessible at `http://localhost:3000` (or the 
 4.  Fill out the loan application form with the required details.
 5.  Submit the form to get a credit prediction (approved/not approved) and a confidence score.
 
-If the ML service is not yet ready, you might see a "ML service is warming up" message. Please wait a moment and try again.
+ 
 
-## Project Structure
 
-```
-creditX/
-├── frontend/
-│   ├── app.js             # Main Express application file
-│   ├── package.json       # Node.js project dependencies
-│   ├── package-lock.json  # Dependency lock file
-│   ├── public/            # Static assets (CSS, JS, images)
-│   │   └── style.css
-│   └── views/             # EJS template files
-│       ├── index.ejs      # Main form page
-│       └── result.ejs     # Prediction result page
-└── README.md              # This file
-```
 
 ## Contributing
 
