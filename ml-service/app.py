@@ -50,7 +50,7 @@ def predict():
         scaled = scaler.transform(full)
 
         pred  = model.predict(scaled)[0]
-        proba = model.predict_proba(scaled)[0][int(pred)]
+        proba = model.predict_proba(scaled)[0][1]
 
         print("Prediction:", int(pred), "Confidence:", round(float(proba)*100, 1))
 
@@ -64,4 +64,4 @@ def predict():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(port=5000, debug=True) 

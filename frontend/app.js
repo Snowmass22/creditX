@@ -58,9 +58,63 @@ app.post("/predict", async (req, res) => {
     clearTimeout(timeout);
 
     const result = await response.json();
+
+    // ── HARDCODED REASON LOGIC ──
+    // Check the applicant's data and build a human-readable reason.
+    const reasons = [];
+
+    if (result.approved) {
+      // Positive factors
+      if (payload.Credit_Score >= 750)
+        reasons.push("Excellent credit score of " + payload.Credit_Score);
+      else if (payload.Credit_Score >= 600)
+        reasons.push("Good credit score of " + payload.Credit_Score);
+
+      if (payload.DTI_Ratio <= 0.35)
+        reasons.push("Healthy debt-to-income ratio (" + payload.DTI_Ratio + ")");
+
+      if (payload.Savings >= payload.Loan_Amount * 0.2)
+        reasons.push("Strong savings relative to loan amount");
+
+      if (payload.Employment_Status === "Salaried" || payload.Employment_Status === "Government")
+        reasons.push("Stable employment (" + payload.Employment_Status + ")");
+
+      if (payload.Collateral_Value > 0)
+        reasons.push("Collateral provided adds security");
+
+      if (reasons.length === 0)
+        reasons.push("Your overall financial profile meets our lending criteria");
+
+    } else {
+      // Negative factors
+      if (payload.Credit_Score < 500)
+        reasons.push("Low credit score (" + payload.Credit_Score + " — minimum recommended is 600)");
+      else if (payload.Credit_Score < 600)
+        reasons.push("Below-average credit score of " + payload.Credit_Score);
+
+      if (payload.DTI_Ratio > 0.5)
+        reasons.push("High debt-to-income ratio (" + payload.DTI_Ratio + " — should be below 0.5)");
+
+      if (payload.Savings < payload.Loan_Amount * 0.1)
+        reasons.push("Insufficient savings compared to the requested loan amount");
+
+      if (payload.Existing_Loans >= 3)
+        reasons.push("Too many existing loans (" + payload.Existing_Loans + ")");
+
+      if (payload.Employment_Status === "Unemployed")
+        reasons.push("No current employment or income source");
+
+      if (reasons.length === 0)
+        reasons.push("Your combined financial profile does not meet the current lending criteria");
+    }
+
+    const reason = reasons.join(". ") + ".";
+    // ── END OF REASON LOGIC ──
+
     res.render("result-updated", {
       approved:   result.approved,
-      confidence: result.confidence ?? "N/A"
+      confidence: result.confidence ?? "N/A",
+      reason:     reason
     });
 
   } catch (err) {

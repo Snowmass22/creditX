@@ -170,6 +170,40 @@
       margin-bottom: 32px;
     }
 
+    /* REASON BOX */
+    .reason-box {
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      text-align: left;
+      border: 1px solid;
+    }
+
+    .reason-box.approved {
+      background: rgba(52, 211, 153, 0.07);
+      border-color: rgba(52, 211, 153, 0.25);
+    }
+
+    .reason-box.rejected {
+      background: rgba(248, 113, 113, 0.07);
+      border-color: rgba(248, 113, 113, 0.25);
+    }
+
+    .reason-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .reason-text {
+      font-size: 13.5px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
     /* CONFIDENCE METER */
     .meter-wrap {
       background: var(--surface2);
@@ -352,6 +386,12 @@
           : 'Unfortunately, your application does not meet the criteria.' %>
       </div>
 
+      <!-- Reason Box -->
+      <div class="reason-box <%= approved ? 'approved' : 'rejected' %>">
+        <div class="reason-label"><%= approved ? '✅ Why Approved' : '❌ Why Rejected' %></div>
+        <div class="reason-text"><%= reason %></div>
+      </div>
+
       <!-- Confidence Meter -->
       <div class="meter-wrap">
         <div class="meter-header">
@@ -471,6 +511,7 @@
     .from('.icon-wrap', { scale: 0, rotate: -180, duration: 0.6, ease: 'back.out(2)' }, '-=0.4')
     .from('.verdict',    { y: 20, opacity: 0, duration: 0.4 }, '-=0.2')
     .from('.verdict-sub',{ y: 10, opacity: 0, duration: 0.3 }, '-=0.2')
+     .from('.reason-box', { y: 12, opacity: 0, duration: 0.35 }, '-=0.1')
     .from('.meter-wrap', { y: 16, opacity: 0, duration: 0.35 }, '-=0.1')
     .from('.info-row',   { y: 12, opacity: 0, duration: 0.3 }, '-=0.1')
     .from('.cta-row',    { y: 10, opacity: 0, duration: 0.3 }, '-=0.1')
@@ -496,3 +537,4 @@
 </script>
 </body>
 </html>
+ 
